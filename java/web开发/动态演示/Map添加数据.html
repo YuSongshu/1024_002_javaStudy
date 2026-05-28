@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Map 集合动态演示</title>
+    <style>
+        :root {
+            --primary-color: #4a90e2;
+            --bg-color: #f5f7fa;
+            --card-bg: #ffffff;
+            --text-color: #333;
+            --key-color: #e74c3c;
+            --value-color: #27ae60;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            display: flex;
+            width: 900px;
+            height: 600px;
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        /* 左侧控制面板 */
+        .control-panel {
+            width: 35%;
+            padding: 30px;
+            background: #2c3e50;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .control-panel h2 {
+            margin-top: 0;
+            font-size: 24px;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 10px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .input-group label {
+            font-size: 14px;
+            color: #bdc3c7;
+        }
+
+        .input-group input {
+            padding: 12px;
+            border-radius: 6px;
+            border: none;
+            outline: none;
+            font-size: 16px;
+            background: #34495e;
+            color: white;
+            transition: 0.3s;
+        }
+
+        .input-group input:focus {
+            background: #415b76;
+            box-shadow: 0 0 0 2px var(--primary-color);
+        }
+
+        button {
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            background: var(--primary-color);
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.2s;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background: #357abd;
+            transform: translateY(-2px);
+        }
+
+        .hint {
+            font-size: 12px;
+            color: #95a5a6;
+            margin-top: auto;
+        }
+
+        /* 右侧展示区域 */
+        .display-area {
+            width: 65%;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            background: #ecf0f1;
+        }
+
+        .map-visual {
+            border: 2px dashed #bdc3c7;
+            border-radius: 8px;
+            padding: 20px;
+            flex-grow: 1;
+            overflow-y: auto;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            align-content: flex-start;
+            flex-wrap: wrap;
+        }
+
+        .map-visual h3 {
+            width: 100%;
+            margin: 0 0 10px 0;
+            color: #7f8c8d;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* 键值对卡片样式 */
+        .entry-card {
+            display: flex;
+            align-items: center;
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 10px 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            animation: slideIn 0.4s ease-out;
+            position: relative;
+            transition: all 0.3s;
+        }
+
+        .entry-card:hover {
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+
+        .key {
+            font-weight: bold;
+            color: var(--key-color);
+            background: #fadbd8;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 16px;
+        }
+
+        .arrow {
+            margin: 0 15px;
+            color: #95a5a6;
+            font-size: 20px;
+        }
+
+        .value {
+            color: var(--value-color);
+            background: #d5f5e3;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 16px;
+            flex-grow: 1;
+        }
+
+        .delete-btn {
+            margin-left: 10px;
+            background: transparent;
+            color: #e74c3c;
+            padding: 5px;
+            font-size: 18px;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .delete-btn:hover {
+            background: #fadbd8;
+            transform: scale(1.1);
+        }
+
+        /* 动画 */
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes highlight {
+            0% { background-color: #fff; }
+            50% { background-color: #fff3cd; }
+            100% { background-color: #fff; }
+        }
+
+        .updated {
+            animation: highlight 1s ease;
+        }
+
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            color: #bdc3c7;
+            margin-top: 50px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- 左侧：输入区 -->
+    <div class="control-panel">
+        <h2>Map 数据录入</h2>
+        
+        <div class="input-group">
+            <label for="keyInput">Key (键 - 唯一)</label>
+            <input type="text" id="keyInput" placeholder="例如: name, id, age">
+        </div>
+
+        <div class="input-group">
+            <label for="valueInput">Value (值)</label>
+            <input type="text" id="valueInput" placeholder="例如: 张三, 1001, 18">
+        </div>
+
+        <button onclick="addData()">添加数据 (put)</button>
+        
+        <div class="hint">
+            <p>💡 提示：Map 不允许重复的 Key。<br>如果输入已存在的 Key，将会更新对应的 Value。</p>
+        </div>
+    </div>
+
+    <!-- 右侧：展示区 -->
+    <div class="display-area">
+        <div class="map-visual" id="mapContainer">
+            <h3>当前 Map 内容 (Size: <span id="sizeCount">0</span>)</h3>
+            <div id="entriesList">
+                <div class="empty-state">Map 是空的，请在左侧添加数据</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 模拟 Map 数据结构
+    const myMap = new Map();
+
+    const keyInput = document.getElementById('keyInput');
+    const valueInput = document.getElementById('valueInput');
+    const entriesList = document.getElementById('entriesList');
+    const sizeCount = document.getElementById('sizeCount');
+
+    // 添加数据函数
+    function addData() {
+        const key = keyInput.value.trim();
+        const value = valueInput.value.trim();
+
+        if (!key) {
+            alert("Key 不能为空！");
+            return;
+        }
+
+        const isUpdate = myMap.has(key);
+        
+        // 存入 Map
+        myMap.set(key, value);
+
+        // 重新渲染界面
+        renderMap();
+
+        // 清空输入框并聚焦
+        keyInput.value = '';
+        valueInput.value = '';
+        keyInput.focus();
+
+        // 如果是更新操作，给对应的卡片加一个闪烁效果
+        if (isUpdate) {
+            setTimeout(() => {
+                const cards = document.querySelectorAll('.entry-card');
+                cards.forEach(card => {
+                    if (card.dataset.key === key) {
+                        card.classList.add('updated');
+                    }
+                });
+            }, 50);
+        }
+    }
+
+    // 删除数据函数
+    function deleteData(key) {
+        myMap.delete(key);
+        renderMap();
+    }
+
+    // 渲染 Map 到 HTML
+    function renderMap() {
+        // 更新计数器
+        sizeCount.innerText = myMap.size;
+
+        // 清空列表
+        entriesList.innerHTML = '';
+
+        if (myMap.size === 0) {
+            entriesList.innerHTML = '<div class="empty-state">Map 是空的，请在左侧添加数据</div>';
+            return;
+        }
+
+        // 遍历 Map 生成 HTML
+        myMap.forEach((val, key) => {
+            const card = document.createElement('div');
+            card.className = 'entry-card';
+            card.dataset.key = key; // 用于查找 DOM
+
+            card.innerHTML = `
+                <div class="key">${key}</div>
+                <div class="arrow">➜</div>
+                <div class="value">${val}</div>
+                <button class="delete-btn" onclick="deleteData('${key}')" title="删除">✕</button>
+            `;
+
+            entriesList.appendChild(card);
+        });
+    }
+
+    // 支持回车键添加
+    valueInput.addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            addData();
+        }
+    });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据结构动态演示：HashSet vs TreeSet</title>
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2c3e50;
+            --accent-color: #e74c3c;
+            --success-color: #27ae60;
+            --hash-bg: #ecf0f1;
+            --tree-bg: #e8f5e9;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            color: var(--secondary-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 {
+            color: var(--secondary-color);
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #7f8c8d;
+            margin-bottom: 30px;
+        }
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            width: 100%;
+            max-width: 1300px;
+        }
+        @media (max-width: 900px) {
+            .container { grid-template-columns: 1fr; }
+        }
+        .card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .card h2 {
+            margin-top: 0;
+            color: var(--primary-color);
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+            width: 100%;
+            text-align: center;
+        }
+
+        /* ===== HashSet 样式 ===== */
+        .hash-visualizer {
+            width: 100%;
+            min-height: 280px;
+            background: var(--hash-bg);
+            border-radius: 8px;
+            margin: 20px 0;
+            padding: 15px;
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            position: relative;
+        }
+        .hash-bucket {
+            background: #fff;
+            border: 2px dashed #bbb;
+            border-radius: 8px;
+            padding: 5px;
+            display: flex;
+            flex-direction: column-reverse; /* 新元素从底部往上堆 */
+            align-items: center;
+            transition: all 0.3s;
+        }
+        .hash-bucket.active {
+            border-color: var(--accent-color);
+            background: #ffeaea;
+        }
+        .hash-item {
+            background: var(--primary-color);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            margin-top: 4px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .hash-calc {
+            grid-column: span 5;
+            background: #fff3cd;
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+            font-size: 15px;
+            min-height: 24px;
+        }
+
+        /* ===== TreeSet 样式 ===== */
+        .tree-visualizer {
+            width: 100%;
+            min-height: 320px;
+            background: var(--tree-bg);
+            border-radius: 8px;
+            margin: 20px 0;
+            position: relative;
+            overflow: hidden;
+        }
+        .tree-node {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            position: absolute;
+            transform: translate(-50%, -50%);
+            transition: all 0.3s;
+            z-index: 2;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .tree-node.highlight {
+            box-shadow: 0 0 0 4px #f39c12;
+            transform: translate(-50%, -50%) scale(1.1);
+        }
+        .tree-node.left { background: #9b59b6; }
+        .tree-node.right { background: var(--success-color); }
+        
+        .tree-line {
+            position: absolute;
+            background: #555;
+            height: 2px;
+            transform-origin: 0 0;
+            z-index: 1;
+        }
+        .tree-tip {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #fff3cd;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            z-index: 10;
+            white-space: nowrap;
+        }
+
+        /* 控制区 */
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        input {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            width: 80px;
+            text-align: center;
+            font-size: 16px;
+        }
+        button {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            color: white;
+            font-size: 14px;
+        }
+        .btn-add { background-color: var(--success-color); }
+        .btn-clear { background-color: #7f8c8d; }
+        .description {
+            font-size: 0.85em;
+            color: #666;
+            margin-top: 15px;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+
+<h1>📊 HashSet vs TreeSet 动态演示</h1>
+<p class="subtitle">观察哈希冲突与二叉搜索树的插入过程</p>
+
+<div class="container">
+    <!-- HashSet Card -->
+    <div class="card">
+        <h2>HashSet (哈希表 + 链表)</h2>
+        <div class="hash-visualizer" id="hashViz">
+            <!-- 动态生成 -->
+        </div>
+        <div class="controls">
+            <input type="number" id="hashInput" placeholder="输入数字" value="7">
+            <button class="btn-add" onclick="addHashSet()">添加</button>
+            <button class="btn-clear" onclick="clearHashSet()">清空</button>
+        </div>
+        <p class="description">
+            <strong>过程：</strong> 计算 <code>hash = value % 5</code>，放入对应桶。<br>
+            <strong>冲突：</strong> 如果余数相同（如 7 和 12），会在同一个桶内形成链表。
+        </p>
+    </div>
+
+    <!-- TreeSet Card -->
+    <div class="card">
+        <h2>TreeSet (红黑树/二叉搜索树)</h2>
+        <div class="tree-visualizer" id="treeViz">
+            <!-- 动态生成 -->
+        </div>
+        <div class="controls">
+            <input type="number" id="treeInput" placeholder="输入数字" value="50">
+            <button class="btn-add" onclick="addTreeSet()">添加</button>
+            <button class="btn-clear" onclick="clearTreeSet()">清空</button>
+        </div>
+        <p class="description">
+            <strong>规则：</strong> 左子树 < 根 < 右子树。<br>
+            <strong>演示：</strong> 黄色高亮表示当前正在比较的节点。
+        </p>
+    </div>
+</div>
+
+<script>
+// =========================
+// HashSet 逻辑
+// =========================
+const HASH_BUCKETS = 5;
+let hashData = [];
+
+function initHash() {
+    const viz = document.getElementById('hashViz');
+    viz.innerHTML = '<div class="hash-calc" id="hashCalc">等待输入...</div>';
+    for (let i = 0; i < HASH_BUCKETS; i++) {
+        const bucket = document.createElement('div');
+        bucket.className = 'hash-bucket';
+        bucket.dataset.index = i;
+        bucket.innerHTML = `<small>Bucket ${i}</small>`;
+        viz.appendChild(bucket);
+    }
+    hashData = [];
+}
+
+function addHashSet() {
+    const input = document.getElementById('hashInput');
+    const val = parseInt(input.value);
+    if (isNaN(val)) return;
+
+    // 检查重复
+    if (hashData.includes(val)) {
+        alert('HashSet 不允许重复！');
+        return;
+    }
+    hashData.push(val);
+
+    const bucketIndex = val % HASH_BUCKETS;
+    const calcDiv = document.getElementById('hashCalc');
+    const buckets = document.querySelectorAll('.hash-bucket');
+
+    // 显示计算过程
+    buckets.forEach(b => b.classList.remove('active'));
+    buckets[bucketIndex].classList.add('active');
+    calcDiv.innerHTML = `计算哈希: <strong>${val} % 5 = ${bucketIndex}</strong> → 放入 Bucket ${bucketIndex}`;
+
+    // 创建元素
+    const item = document.createElement('div');
+    item.className = 'hash-item';
+    item.textContent = val;
+    buckets[bucketIndex].appendChild(item);
+
+    input.value = '';
+}
+
+function clearHashSet() {
+    initHash();
+}
+
+// =========================
+// TreeSet 逻辑
+// =========================
+let treeNodes = {}; // { val: {x, y, left, right} }
+let root = null;
+
+function initTree() {
+    document.getElementById('treeViz').innerHTML = '';
+    treeNodes = {};
+    root = null;
+}
+
+function addTreeSet() {
+    const input = document.getElementById('treeInput');
+    const val = parseInt(input.value);
+    if (isNaN(val)) return;
+    if (treeNodes[val]) {
+        alert('TreeSet 不允许重复！');
+        return;
+    }
+
+    if (!root) {
+        root = createTreeNode(val, 50, 60);
+        treeNodes[val] = root;
+        return;
+    }
+
+    walkTree(root, val);
+    input.value = '';
+}
+
+function walkTree(current, val) {
+    const viz = document.getElementById('treeViz');
+    
+    // 高亮当前节点
+    const nodeEl = document.getElementById(`node-${current.val}`);
+    nodeEl.classList.add('highlight');
+
+    // 显示比较提示
+    let tip = document.querySelector('.tree-tip');
+    if (!tip) {
+        tip = document.createElement('div');
+        tip.className = 'tree-tip';
+        viz.appendChild(tip);
+    }
+
+    setTimeout(() => {
+        nodeEl.classList.remove('highlight');
+        
+        if (val < current.val) {
+            tip.innerText = `${val} < ${current.val}，向左走`;
+            if (!current.left) {
+                const newNode = createTreeNode(val, current.x - 40, current.y + 80);
+                drawLine(current, newNode, 'left');
+                current.left = newNode;
+                treeNodes[val] = newNode;
+                tip.remove();
+            } else {
+                walkTree(current.left, val);
+            }
+        } else {
+            tip.innerText = `${val} > ${current.val}，向右走`;
+            if (!current.right) {
+                const newNode = createTreeNode(val, current.x + 40, current.y + 80);
+                drawLine(current, newNode, 'right');
+                current.right = newNode;
+                treeNodes[val] = newNode;
+                tip.remove();
+            } else {
+                walkTree(current.right, val);
+            }
+        }
+    }, 800); // 延迟 0.8 秒，让学生看清过程
+}
+
+function createTreeNode(val, x, y) {
+    const viz = document.getElementById('treeViz');
+    const node = document.createElement('div');
+    node.className = 'tree-node';
+    node.id = `node-${val}`;
+    node.innerText = val;
+    node.style.left = `${x}%`;
+    node.style.top = `${y}px`;
+    viz.appendChild(node);
+    return { val, x, y, left: null, right: null };
+}
+
+function drawLine(parent, child, direction) {
+    const viz = document.getElementById('treeViz');
+    const line = document.createElement('div');
+    line.className = 'tree-line';
+    
+    const dx = child.x - parent.x;
+    const dy = child.y - parent.y;
+    const length = Math.sqrt(dx*dx + dy*dy);
+    const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+
+    line.style.width = `${length}px`;
+    line.style.left = `${parent.x}%`;
+    line.style.top = `${parent.y}px`;
+    line.style.transform = `rotate(${angle}deg)`;
+    
+    viz.appendChild(line);
+}
+
+function clearTreeSet() {
+    initTree();
+}
+
+// 初始化
+window.onload = function() {
+    initHash();
+    initTree();
+};
+</script>
+
+</body>
+</html>

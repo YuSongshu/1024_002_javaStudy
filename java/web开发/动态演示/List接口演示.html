@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据结构动态演示：ArrayList, LinkedList, Stack</title>
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2c3e50;
+            --accent-color: #e74c3c;
+            --success-color: #27ae60;
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --insert-color: #9b59b6;
+            --prev-pointer-color: #f39c12; /* 新增：前驱指针颜色（橙色） */
+            --next-pointer-color: #3498db; /* 新增：后继指针颜色（蓝色） */
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--secondary-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            color: var(--secondary-color);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card h2 {
+            margin-top: 0;
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--bg-color);
+            padding-bottom: 10px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .visualizer {
+            width: 100%;
+            min-height: 200px;
+            background: #fafafa;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            margin: 20px 0;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 10px;
+            overflow-x: auto;
+            position: relative;
+            flex-wrap: wrap;
+            align-content: flex-start;
+        }
+
+        .data-item {
+            background: var(--primary-color);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            margin: 5px;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            min-width: 30px;
+            text-align: center;
+        }
+
+        .data-item.inserted {
+            background: var(--insert-color);
+            box-shadow: 0 0 15px var(--insert-color);
+        }
+
+        /* ========== 双向循环链表节点样式 ========== */
+        .node {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            margin: 5px 2px;
+            position: relative;
+        }
+
+        .node-content {
+            background: var(--secondary-color);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            font-weight: bold;
+            min-width: 40px;
+            text-align: center;
+            z-index: 2;
+            position: relative;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        /* 前驱指针（向左） - 橙色 */
+        .node-pointer-prev {
+            width: 25px;
+            height: 3px;
+            background: var(--prev-pointer-color);
+            position: relative;
+            margin-right: -3px;
+            border-radius: 2px;
+        }
+
+        .node-pointer-prev::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: -5px;
+            width: 0;
+            height: 0;
+            border-left: 8px solid transparent;
+            border-right: 8px solid var(--prev-pointer-color);
+            border-top: 6px solid transparent;
+            border-bottom: 6px solid transparent;
+        }
+
+        /* 后继指针（向右） - 蓝色 */
+        .node-pointer-next {
+            width: 25px;
+            height: 3px;
+            background: var(--next-pointer-color);
+            position: relative;
+            margin-left: -3px;
+            border-radius: 2px;
+        }
+
+        .node-pointer-next::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: -5px;
+            width: 0;
+            height: 0;
+            border-left: 8px solid var(--next-pointer-color);
+            border-right: 8px solid transparent;
+            border-top: 6px solid transparent;
+            border-bottom: 6px solid transparent;
+        }
+
+        /* 循环连接线（从最后一个节点指向第一个节点） */
+        .circular-connection {
+            position: absolute;
+            top: -30px;
+            height: 3px;
+            background: linear-gradient(90deg, var(--next-pointer-color), var(--prev-pointer-color));
+            border-radius: 2px;
+            z-index: 1;
+        }
+
+        .circular-connection::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: -5px;
+            width: 0;
+            height: 0;
+            border-left: 8px solid transparent;
+            border-right: 8px solid var(--prev-pointer-color);
+            border-top: 6px solid transparent;
+            border-bottom: 6px solid transparent;
+        }
+
+        .circular-connection::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: -5px;
+            width: 0;
+            height: 0;
+            border-left: 8px solid var(--next-pointer-color);
+            border-right: 8px solid transparent;
+            border-top: 6px solid transparent;
+            border-bottom: 6px solid transparent;
+        }
+
+        /* 循环指示器文字 */
+        .circular-indicator {
+            position: absolute;
+            top: -45px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 12px;
+            color: var(--accent-color);
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        /* 空链表提示 */
+        .empty-list-message {
+            color: #95a5a6;
+            font-style: italic;
+            text-align: center;
+            width: 100%;
+            padding: 20px;
+        }
+
+        /* ========== 栈样式 ========== */
+        .stack-container {
+            display: flex;
+            flex-direction: column-reverse;
+            width: 100%;
+            align-items: center;
+            height: 100%;
+            justify-content: flex-start;
+        }
+
+        .stack-item {
+            width: 80%;
+            margin: 2px 0;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        input {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            width: 60px;
+            text-align: center;
+        }
+
+        .insert-group {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .insert-group input {
+            width: 40px;
+            font-size: 0.9em;
+        }
+
+        button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.2s;
+            color: white;
+        }
+
+        .btn-add {
+            background-color: var(--success-color);
+        }
+
+        .btn-add:hover {
+            background-color: #219150;
+        }
+
+        .btn-insert {
+            background-color: var(--insert-color);
+        }
+
+        .btn-insert:hover {
+            background-color: #8e44ad;
+        }
+
+        .btn-remove {
+            background-color: var(--accent-color);
+        }
+
+        .btn-remove:hover {
+            background-color: #c0392b;
+        }
+
+        .description {
+            font-size: 0.9em;
+            color: #7f8c8d;
+            margin-top: 15px;
+            text-align: center;
+            line-height: 1.5;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes fadeOut {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(0); opacity: 0; }
+        }
+
+        .removing {
+            animation: fadeOut 0.4s forwards !important;
+        }
+
+        @keyframes shiftSimulate {
+            0% { transform: translateX(0px); }
+            50% { transform: translateX(10px); background-color: #95a5a6; }
+            100% { transform: translateX(0px); }
+        }
+
+        .shifting {
+            animation: shiftSimulate 0.5s ease-in-out;
+        }
+    </style>
+</head>
+<body>
+    <h1>数据结构动态演示</h1>
+    <div class="container">
+        <!-- ArrayList 演示 -->
+        <div class="card">
+            <h2>ArrayList (动态数组)</h2>
+            <div class="visualizer" id="array-list-viz"></div>
+            <div class="controls">
+                <input type="number" id="array-input" placeholder="数值" value="10">
+                <div class="insert-group">
+                    <input type="number" id="array-index" placeholder="索引" value="1" min="0" max="10">
+                    <button class="btn-insert" onclick="insertArrayList()">插入 (Insert)</button>
+                </div>
+                <button class="btn-add" onclick="addArrayList()">添加 (Add)</button>
+                <button class="btn-remove" onclick="removeArrayList()">删除 (Remove Last)</button>
+            </div>
+            <p class="description">
+                <strong>特点：</strong> 基于动态数组实现。<br>
+                支持随机访问，查询快 (O(1))。<br>
+                <strong>插入演示：</strong> 中间插入时，后续元素会"闪动"，模拟内存移动开销。
+            </p>
+        </div>
+
+        <!-- LinkedList 演示 -->
+        <div class="card">
+            <h2>LinkedList (双向循环链表)</h2>
+            <div class="visualizer" id="linked-list-viz" style="align-items: flex-start; position: relative;">
+                <!-- 节点将在这里生成 -->
+            </div>
+            <div class="controls">
+                <input type="text" id="linked-input" placeholder="值" value="A">
+                <div class="insert-group">
+                    <input type="number" id="linked-index" placeholder="索引" value="1" min="0" max="10">
+                    <button class="btn-insert" onclick="insertLinkedList()">插入 (Insert)</button>
+                </div>
+                <button class="btn-add" onclick="addLinkedList()">添加 (Add Last)</button>
+                <button class="btn-remove" onclick="removeLinkedList()">删除 (Remove Last)</button>
+                <div style="width: 100%; margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 15px;">
+                    <label style="font-size: 0.9em; cursor: pointer;">
+                        <input type="checkbox" id="circular-toggle" checked onchange="updateCircularVisualization()">
+                        <span style="color: var(--accent-color);">🔄 循环链表模式</span>
+                    </label>
+                    <button class="btn-remove" onclick="clearLinkedList()" style="padding: 5px 10px; font-size: 0.8em;">清空</button>
+                </div>
+            </div>
+            <p class="description">
+                <strong>特点：</strong> 基于<strong>双向循环链表</strong>实现。<br>
+                <span style="color: var(--prev-pointer-color);">橙色箭头</span>：指向前驱节点 | 
+                <span style="color: var(--next-pointer-color);">蓝色箭头</span>：指向后继节点<br>
+                <strong>插入演示：</strong> 仅需修改相邻节点的指针，无需移动元素。
+            </p>
+        </div>
+
+        <!-- Stack 演示 -->
+        <div class="card">
+            <h2>Stack (栈)</h2>
+            <div class="visualizer" id="stack-viz">
+                <div class="stack-container" id="stack-container"></div>
+            </div>
+            <div class="controls">
+                <input type="number" id="stack-input" placeholder="数值" value="3">
+                <button class="btn-add" onclick="pushStack()">压入 (Push)</button>
+                <button class="btn-remove" onclick="popStack()">弹出 (Pop)</button>
+            </div>
+            <p class="description">
+                <strong>特点：</strong> 后进先出 (LIFO)。<br>
+                只能在栈顶进行操作。<br>
+                常用于函数调用堆栈、撤销操作等。
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // 通用辅助函数：生成随机颜色
+        function getRandomColor() {
+            const letters = 'BCDEF';
+            let color = '#';
+            for (let i = 0; i < 6; i++) {
+                color += letters[Math.floor(Math.random() * letters.length)];
+            }
+            return color;
+        }
+
+        // --- ArrayList 逻辑 ---
+        let arrayListData = [];
+
+        function addArrayList() {
+            const input = document.getElementById('array-input');
+            const val = input.value || Math.floor(Math.random() * 100);
+            const container = document.getElementById('array-list-viz');
+            const el = document.createElement('div');
+            el.className = 'data-item';
+            el.innerText = val;
+            el.style.backgroundColor = getRandomColor();
+            el.title = `Index: ${arrayListData.length}`;
+            container.appendChild(el);
+            arrayListData.push(val);
+            container.scrollLeft = container.scrollWidth;
+            input.value = '';
+        }
+
+        function insertArrayList() {
+            const inputVal = document.getElementById('array-input').value || Math.floor(Math.random() * 100);
+            const inputIndex = document.getElementById('array-index');
+            const index = parseInt(inputIndex.value) || 0;
+            const container = document.getElementById('array-list-viz');
+            const children = container.children;
+            const maxIndex = children.length;
+
+            if (index < 0 || index > maxIndex) {
+                alert(`索引超出范围！请输入 0 到 ${maxIndex} 之间的数字。`);
+                return;
+            }
+
+            const el = document.createElement('div');
+            el.className = 'data-item inserted';
+            el.innerText = inputVal;
+            el.style.backgroundColor = 'var(--insert-color)';
+            el.title = `Index: ${index}`;
+
+            for (let i = index; i < maxIndex; i++) {
+                if (children[i]) {
+                    children[i].classList.add('shifting');
+                }
+            }
+
+            if (index >= maxIndex) {
+                container.appendChild(el);
+            } else {
+                container.insertBefore(el, children[index]);
+            }
+
+            arrayListData.splice(index, 0, inputVal);
+
+            setTimeout(() => {
+                for (let i = index; i < container.children.length; i++) {
+                    if (container.children[i]) {
+                        container.children[i].classList.remove('shifting');
+                    }
+                }
+            }, 500);
+
+            document.getElementById('array-input').value = '';
+        }
+
+        function removeArrayList() {
+            const container = document.getElementById('array-list-viz');
+            if (container.lastElementChild) {
+                container.lastElementChild.classList.add('removing');
+                setTimeout(() => {
+                    if(container.lastElementChild) container.removeChild(container.lastElementChild);
+                }, 400);
+                arrayListData.pop();
+            }
+        }
+
+        // --- LinkedList 逻辑 ---
+        let linkedListData = [];
+        let isCircularMode = true; // 默认为循环链表模式
+
+        // 更新循环链表的视觉连接
+        function updateCircularVisualization() {
+            const container = document.getElementById('linked-list-viz');
+            const nodes = container.querySelectorAll('.node');
+            const isCircular = document.getElementById('circular-toggle').checked;
+            isCircularMode = isCircular;
+
+            // 移除旧的循环连接
+            const oldConnections = container.querySelectorAll('.circular-connection, .circular-indicator');
+            oldConnections.forEach(conn => conn.remove());
+
+            if (nodes.length < 2 || !isCircular) return;
+
+            // 创建循环连接线（从最后一个节点指向第一个节点）
+            const firstNode = nodes[0];
+            const lastNode = nodes[nodes.length - 1];
+            
+            const firstRect = firstNode.getBoundingClientRect();
+            const lastRect = lastNode.getBoundingClientRect();
+            const containerRect = container.getBoundingClientRect();
+
+            // 计算连接线的位置和宽度
+            const startX = lastRect.right - containerRect.left;
+            const endX = firstRect.left - containerRect.left;
+            const width = startX - endX;
+
+            // 创建连接线元素
+            const connection = document.createElement('div');
+            connection.className = 'circular-connection';
+            connection.style.position = 'absolute';
+            connection.style.top = '30px';
+            connection.style.left = `${endX}px`;
+            connection.style.width = `${width}px`;
+            
+            // 添加循环指示器文字
+            const indicator = document.createElement('div');
+            indicator.className = 'circular-indicator';
+            indicator.textContent = '双向循环链表';
+            
+            container.appendChild(connection);
+            container.appendChild(indicator);
+        }
+
+        function createNodeElement(value, isInserted = false) {
+            const node = document.createElement('div');
+            node.className = 'node';
+            node.innerHTML = `
+                <div class="node-pointer-prev"></div>
+                <div class="node-content" style="background-color: ${isInserted ? 'var(--insert-color)' : getRandomColor()}">${value}</div>
+                <div class="node-pointer-next"></div>
+            `;
+            return node;
+        }
+
+        function addLinkedList() {
+            const input = document.getElementById('linked-input');
+            const val = input.value || String.fromCharCode(65 + linkedListData.length);
+            const container = document.getElementById('linked-list-viz');
+            
+            // 移除空列表提示
+            const emptyMsg = container.querySelector('.empty-list-message');
+            if (emptyMsg) emptyMsg.remove();
+
+            const node = createNodeElement(val);
+            container.appendChild(node);
+            linkedListData.push(val);
+            input.value = '';
+            
+            updateCircularVisualization();
+        }
+
+        function insertLinkedList() {
+            const inputVal = document.getElementById('linked-input').value || String.fromCharCode(65 + linkedListData.length);
+            const inputIndex = document.getElementById('linked-index');
+            const index = parseInt(inputIndex.value) || 0;
+            const container = document.getElementById('linked-list-viz');
+            const children = Array.from(container.querySelectorAll('.node'));
+            const maxIndex = children.length;
+
+            if (index < 0 || index > maxIndex) {
+                alert(`索引超出范围！请输入 0 到 ${maxIndex} 之间的数字。`);
+                return;
+            }
+
+            // 移除空列表提示
+            const emptyMsg = container.querySelector('.empty-list-message');
+            if (emptyMsg) emptyMsg.remove();
+
+            const node = createNodeElement(inputVal, true);
+
+            if (index >= maxIndex) {
+                container.appendChild(node);
+            } else {
+                container.insertBefore(node, children[index]);
+            }
+
+            linkedListData.splice(index, 0, inputVal);
+            document.getElementById('linked-input').value = '';
+            
+            updateCircularVisualization();
+        }
+
+        function removeLinkedList() {
+            const container = document.getElementById('linked-list-viz');
+            if (container.lastElementChild) {
+                // 如果只剩下一个节点，不删除
+                if (container.children.length <= 1) {
+                    alert('链表不能为空！');
+                    return;
+                }
+                
+                container.lastElementChild.classList.add('removing');
+                setTimeout(() => {
+                    if(container.lastElementChild) {
+                        container.removeChild(container.lastElementChild);
+                        linkedListData.pop();
+                        updateCircularVisualization();
+                        
+                        // 如果链表为空，显示提示
+                        if (container.children.length === 0) {
+                            const msg = document.createElement('div');
+                            msg.className = 'empty-list-message';
+                            msg.textContent = '链表为空，点击上方按钮添加节点';
+                            container.appendChild(msg);
+                        }
+                    }
+                }, 400);
+            }
+        }
+
+        function clearLinkedList() {
+            const container = document.getElementById('linked-list-viz');
+            container.innerHTML = '<div class="empty-list-message">链表为空，点击上方按钮添加节点</div>';
+            linkedListData = [];
+        }
+
+        // --- Stack 逻辑 ---
+        let stackData = [];
+
+        function pushStack() {
+            const input = document.getElementById('stack-input');
+            const val = input.value || Math.floor(Math.random() * 100);
+            const container = document.getElementById('stack-container');
+            const el = document.createElement('div');
+            el.className = 'data-item stack-item';
+            el.innerText = val;
+            el.style.backgroundColor = getRandomColor();
+            container.appendChild(el);
+            stackData.push(val);
+            input.value = '';
+        }
+
+        function popStack() {
+            const container = document.getElementById('stack-container');
+            if (container.lastElementChild) {
+                container.lastElementChild.classList.add('removing');
+                setTimeout(() => {
+                    if(container.lastElementChild) container.removeChild(container.lastElementChild);
+                }, 400);
+                stackData.pop();
+            }
+        }
+
+        // 初始化一些数据演示效果
+        window.onload = function() {
+            // 默认放几个数据演示效果
+            addArrayList();
+            addArrayList();
+            
+            addLinkedList();
+            addLinkedList();
+            
+            pushStack();
+            pushStack();
+            
+            // 初始更新循环可视化
+            updateCircularVisualization();
+        };
+    </script>
+</body>
+</html>
