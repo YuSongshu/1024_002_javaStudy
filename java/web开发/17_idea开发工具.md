@@ -2,7 +2,7 @@
 
 idea开发工具
 
-<img src="D:\博客\java\web开发\辅助图片_视音频等资料\17\01.png" alt="01" style="zoom: 50%;" />
+<img src=".\辅助图片_视音频等资料\17\01.png" alt="01" style="zoom: 50%;" />
 
 
 
@@ -24,7 +24,7 @@ idea开发工具
 
 ### 创建第一个Project
 
-<img src="D:\博客\java\web开发\辅助图片_视音频等资料\17\02.png" alt="02" style="zoom: 40%;" />
+<img src=".\辅助图片_视音频等资料\17\02.png" alt="02" style="zoom: 40%;" />
 
 
 
@@ -45,7 +45,7 @@ Location: Project 存放地址
 
 右键创好的Project文件，new一个 Module
 
-![03](D:\博客\java\web开发\辅助图片_视音频等资料\17\03.png)
+![03](.\辅助图片_视音频等资料\17\03.png)
 
 
 
@@ -53,7 +53,7 @@ Location: Project 存放地址
 
 右键 src 文件夹 new 一个 Package
 
-<img src="D:\博客\java\web开发\辅助图片_视音频等资料\17\04.png" alt="04" style="zoom:65%;" />
+<img src=".\辅助图片_视音频等资料\17\04.png" alt="04" style="zoom:65%;" />
 
 
 
@@ -77,7 +77,7 @@ Location: Project 存放地址
 com.la.demo.array.ArrayListDemo
 ```
 
-<img src="D:\博客\java\web开发\辅助图片_视音频等资料\17\05.png" alt="05" style="zoom:250%;" />
+<img src=".\辅助图片_视音频等资料\17\05.png" alt="05" style="zoom:250%;" />
 
 
 
